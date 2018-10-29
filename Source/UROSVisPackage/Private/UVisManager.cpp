@@ -4,7 +4,7 @@
 #include "DisplayTrajectoryServer.h"
 
 
-void UVisManager::Init(FString DefaultNamespace)
+void UVisManager::Register(FString DefaultNamespace)
 {
 	Namespace = DefaultNamespace;
 
@@ -24,8 +24,8 @@ void UVisManager::Init(FString DefaultNamespace)
 void UVisManager::SetupServiceServers()
 {
 	// Add Service Servers
-	ServicesToPublish.Add(MakeShareable<FROSDisplayBasicMarkerServer>(new FROSDisplayBasicMarkerServer(Namespace, TEXT("display_basic_marker"), this)));
+	ServicesToPublish.Add(MakeShareable<FROSDisplayBasicMarkerServer>(new FROSDisplayBasicMarkerServer(Namespace, TEXT("display_basic_marker"), GetWorld(), this)));
 	ServicesToPublish.Add(MakeShareable<FROSRemoveMarkerServer>(new FROSRemoveMarkerServer(Namespace, TEXT("remove_marker"), this)));
-	ServicesToPublish.Add(MakeShareable<FROSDisplayTrajectoryServer>(new FROSDisplayTrajectoryServer(Namespace, TEXT("display_trajectory"),  this)));
+	ServicesToPublish.Add(MakeShareable<FROSDisplayTrajectoryServer>(new FROSDisplayTrajectoryServer(Namespace, TEXT("display_trajectory"), GetWorld(), this)));
 	
 }

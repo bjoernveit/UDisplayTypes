@@ -17,15 +17,6 @@ public:
 	// Sets default values for this actor's properties
 	AVisualMarker();
 
-	//UPROPERTY()
-	//UStaticMeshComponent* StaticMeshComponent;
-
-	//UPROPERTY()
-	//UGPUPointCloudRendererComponent* PCRComponent;
-
-
-	//UPROPERTY()
-	//USceneComponent* Root;
 
 protected:
 	// Called when the game starts or when spawned

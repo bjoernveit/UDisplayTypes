@@ -3,7 +3,7 @@
 #include "DisplayTrajectory.h"
 #include "UVisManager.h"
 #include "ROSBridgeSrvServer.h"
-#include "TrajectoryManager.h"
+#include "TrajectorySpawner.h"
 
 class FROSDisplayTrajectoryServer final : public FROSBridgeSrvServer
 {
@@ -14,14 +14,15 @@ private:
 
 	
 	UVisManager* Controller;
-	UTrajectoryManager* TrajectoryManager;
+	UWorld* World;
 
 public:
-	FROSDisplayTrajectoryServer(FString Namespace, FString Name,
+	FROSDisplayTrajectoryServer(FString Namespace, FString Name, UWorld* InWorld,
 		UVisManager* InController) :
 		FROSBridgeSrvServer(Namespace + TEXT("/") + Name, TEXT("unreal_vis_msgs/DisplayTrajectory"))
 	{
 		Controller = InController;
+		World = InWorld;
 	};
 
 	TSharedPtr<FROSBridgeSrv::SrvRequest> FromJson(TSharedPtr<FJsonObject> JsonObject) const override;

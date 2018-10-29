@@ -28,7 +28,8 @@ public class UROSVisPackage : ModuleRules
 			new string[]
 			{
 				"Core",
-                "UROSBridge",
+			    "UROSBridge",
+			    "UROSBridgeEd",
                 "UTags",
                 "UIds",
                 "UVisPackage",

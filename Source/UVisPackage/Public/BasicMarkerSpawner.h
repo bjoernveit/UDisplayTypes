@@ -19,26 +19,21 @@ enum class EBasicMarkerType : uint8
 };
 
 
-UCLASS()
-class UVISPACKAGE_API UBasicMarkerSpawner : public UObject
+USTRUCT()
+struct UVISPACKAGE_API FBasicMarkerSpawner
 {
-	GENERATED_BODY()
+	GENERATED_USTRUCT_BODY()
 
 public:
-	/* Make sure to provoid this class with a proper outer object, so it can call getWorld() */
-	UBasicMarkerSpawner();
-
-	AVisualMarker* SpawnVisualMarker(EBasicMarkerType Type, FVector Location, FRotator Rotation,
+	static AVisualMarker* SpawnVisualMarker(UWorld* World, EBasicMarkerType Type, FVector Location, FRotator Rotation,
 	                                 FColor Color = FColor::White);
 
-	bool AddVisualToActor(AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
+	static bool AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
 
 private:
-	TMap<EBasicMarkerType, FString> MapTypeToMeshPath;
-	UMaterialInterface* Material;
-	bool AddPointVisualToActor(AActor& Actor, FVector Location, FRotator Rotation, FColor Color);
-	bool AddVisualToActorInternal(AActor & Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
-
+	static bool AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color);
+	static bool AddVisualToActorInternal(UWorld* World, AActor & Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
+	static FString GetMeshPathOfType(EBasicMarkerType Type);
 };
 
 

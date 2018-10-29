@@ -1,6 +1,6 @@
 #include "DisplayTrajectoryServer.h"
 #include "Ids.h"
-#include "TrajectoryManager.h"
+#include "TrajectorySpawner.h"
 
 TSharedPtr<FROSBridgeSrv::SrvRequest> FROSDisplayTrajectoryServer::FromJson(TSharedPtr<FJsonObject> JsonObject) const
 {
@@ -16,16 +16,6 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayTrajectoryServer::Callback(
 
 	TSharedPtr<FROSDisplayTrajectorySrv::Request> DisplayTrajectoryRequest =
 		StaticCastSharedPtr<FROSDisplayTrajectorySrv::Request>(Request);
-
-
-	//Run on Gamethread
-	FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&]()
-	{
-		TrajectoryManager = NewObject<UTrajectoryManager>(Controller);
-	}, TStatId(), nullptr, ENamedThreads::GameThread);
-
-	//wait code above to complete
-	FTaskGraphInterface::Get().WaitUntilTaskCompletes(Task);
 
 	
 	const FString Id = DisplayTrajectoryRequest->GetMarkerId().IsEmpty() ? FIds::NewGuidInBase64() : DisplayTrajectoryRequest->GetMarkerId();
@@ -43,14 +33,18 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayTrajectoryServer::Callback(
 	if (VisualMarker == nullptr)
 	{
 		// Marker does not exist => create Marker
-		AVisualMarker* NewMarker = TrajectoryManager->SpawnTrajectoryFromPoints(Points, ColorBegin, ColorEnd);
+		AVisualMarker* NewMarker = FTrajectorySpawner::SpawnTrajectoryFromPoints(World, Points, ColorBegin, ColorEnd);
 		//Controller->IdToMarkerMap.Add(Id, NewMarker);
 		Controller->IdToActorMap.Add(Id, NewMarker);
 	}
 	else
 	{
 		//Marker does exist => Add Visualisation to the Actor
-		TrajectoryManager->AddTrajectoryToActor(**VisualMarker, Points, ColorBegin, ColorEnd);		
+		const auto Marker = static_cast<ATrajectoryMarker*>(*VisualMarker);
+		if (Marker)
+			FTrajectorySpawner::AddTrajectoryToMarker(World, *Marker, Points, ColorBegin, ColorEnd);
+		else
+			UE_LOG(LogTemp, Error, TEXT("[%s] Trajectories can only be added to TrajectoryMarkers."), *FString(__FUNCTION__));
 	}
 
 	return MakeShareable<FROSBridgeSrv::SrvResponse>

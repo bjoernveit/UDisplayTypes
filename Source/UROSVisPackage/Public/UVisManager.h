@@ -3,14 +3,13 @@
 
 #include "CoreMinimal.h"
 #include "Tags.h"
-#include "ROSBridgeHandler.h"
 #include "VisualMarker.h"
-#include <ROSPublisherBaseClass.h>
+#include "UROSCallbackRegisterBase.h"
 #include "UVisManager.generated.h"
 
 
 UCLASS()
-class UROSVISPACKAGE_API UVisManager : public UROSPublisherBaseClass
+class UROSVISPACKAGE_API UVisManager : public UROSCallbackRegisterBase
 {
 	GENERATED_BODY()
 
@@ -20,7 +19,7 @@ public:
 
 	void SetupServiceServers();
 
-	void Init(FString DefaultNamespace) override;
+	void Register(FString DefaultNamespace) override;
 
 	UPROPERTY()
 	TMap<FString, AActor*> IdToActorMap;

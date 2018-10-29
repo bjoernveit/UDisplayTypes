@@ -8,10 +8,7 @@ AVisualMarker::AVisualMarker()
 {
  	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootSceneComponent"));
-		//StaticMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Marker Mesh"));
-	//PCRComponent = CreateDefaultSubobject<UGPUPointCloudRendererComponent>(TEXT("UGPUPointCloudRendererComponent"));
 }
 
 // Called when the game starts or when spawned

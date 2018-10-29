@@ -16,15 +16,6 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayBasicMarkerServer::Callback(
 	TSharedPtr<FROSDisplayBasicMarkerSrv::Request> DisplayMarkerRequest =
 		StaticCastSharedPtr<FROSDisplayBasicMarkerSrv::Request>(Request);
 	
-	//Run on Gamethread
-	FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&]()
-	{
-		MarkerSpawner = NewObject<UBasicMarkerSpawner>(Controller);
-	}, TStatId(), nullptr, ENamedThreads::GameThread);
-
-	//wait code above to complete
-	FTaskGraphInterface::Get().WaitUntilTaskCompletes(Task);
-
 
 	const FString Id = DisplayMarkerRequest->GetMarkerId().IsEmpty() ? FIds::NewGuidInBase64() : DisplayMarkerRequest->GetMarkerId();
 
@@ -39,7 +30,7 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayBasicMarkerServer::Callback(
 	if (VisualMarker == nullptr)
 	{
 		// Marker does not exist => create Marker
-		AVisualMarker* NewMarker = MarkerSpawner->SpawnVisualMarker(MarkerType, Location, Rotation, Color);
+		AVisualMarker* NewMarker = FBasicMarkerSpawner::SpawnVisualMarker(World, MarkerType, Location, Rotation, Color);
 
 
 		//Controller->IdToMarkerMap.Add(Id, NewMarker);
@@ -47,7 +38,7 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayBasicMarkerServer::Callback(
 	}
 	else
 	{
-		MarkerSpawner->AddVisualToActor(**VisualMarker, MarkerType, Location, Rotation, Color);
+		FBasicMarkerSpawner::AddVisualToActor(World, **VisualMarker, MarkerType, Location, Rotation, Color);
 	}
 
 	return MakeShareable<FROSBridgeSrv::SrvResponse>

@@ -5,33 +5,35 @@
 #include "GPUPointCloudRendererComponent.h"
 
 
-UBasicMarkerSpawner::UBasicMarkerSpawner()
+FString FBasicMarkerSpawner::GetMeshPathOfType(EBasicMarkerType Type)
 {
-	Material = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, TEXT("Material'/UVisPackage/Meshes/BasicMarkerMeshes/BasicShapeMaterial.BasicShapeMaterial'")));
+	switch(Type)
+	{
+		case EBasicMarkerType::Cube :
+			return "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cube.SM_Cube'";
+		case EBasicMarkerType::Sphere :
+			return "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Sphere.SM_Sphere'";
+		case EBasicMarkerType::Cylinder :
+			return "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cylinder.SM_Cylinder'";
+		case EBasicMarkerType::Cone :
+			return "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cone.SM_Cone'";
+		case EBasicMarkerType::Arrow:
+			return "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Arrow.SM_Arrow'";
+		default:
+			return "";
 
-	MapTypeToMeshPath.Add(EBasicMarkerType::Cube, "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cube.SM_Cube'");
-	MapTypeToMeshPath.Add(EBasicMarkerType::Sphere, "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Sphere.SM_Sphere'");
-	MapTypeToMeshPath.Add(EBasicMarkerType::Cylinder, "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cylinder.SM_Cylinder'");
-	MapTypeToMeshPath.Add(EBasicMarkerType::Cone, "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Cone.SM_Cone'");
-	MapTypeToMeshPath.Add(EBasicMarkerType::Arrow, "StaticMesh'/UVisPackage/Meshes/BasicMarkerMeshes/SM_Arrow.SM_Arrow'");
+	}
 }
 
-AVisualMarker* UBasicMarkerSpawner::SpawnVisualMarker(EBasicMarkerType Type, FVector Location, FRotator Rotation,
+AVisualMarker* FBasicMarkerSpawner::SpawnVisualMarker(UWorld* World, EBasicMarkerType Type, FVector Location, FRotator Rotation,
 	FColor Color)
 {
-	if (!GetWorld())
-	{
-		UE_LOG(LogTemp, Error, TEXT("[%s]: This object needs to have  an outer object, that GetWorld() can be successfully be called on."), *FString(__FUNCTION__));
-		return nullptr;
-	}
-
+	
 	AVisualMarker* BaseActor;
 	
-	UWorld* World = GetWorld();
-
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.bNoFail = true;
-	SpawnParams.OverrideLevel = GetWorld()->GetCurrentLevel();
+	SpawnParams.OverrideLevel = World->GetCurrentLevel();
 	
 	if (IsInGameThread())
 	{
@@ -46,7 +48,7 @@ AVisualMarker* UBasicMarkerSpawner::SpawnVisualMarker(EBasicMarkerType Type, FVe
 		FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&]()
 		{
 			// Spawn Marker Base Actor
-			BaseActor = GetWorld()->SpawnActor<AVisualMarker>(SpawnParams);
+			BaseActor = World->SpawnActor<AVisualMarker>(SpawnParams);
 			BaseActor->AddActorWorldTransform(FTransform(Rotation, Location));
 
 		}, TStatId(), nullptr, ENamedThreads::GameThread);
@@ -55,7 +57,7 @@ AVisualMarker* UBasicMarkerSpawner::SpawnVisualMarker(EBasicMarkerType Type, FVe
 		FTaskGraphInterface::Get().WaitUntilTaskCompletes(Task);
 	}
 
-	if (AddVisualToActor(*BaseActor, Type, Location, Rotation, Color))
+	if (AddVisualToActor(World, *BaseActor, Type, Location, Rotation, Color))
 		return BaseActor;
 
 	BaseActor->Destroy();
@@ -63,12 +65,12 @@ AVisualMarker* UBasicMarkerSpawner::SpawnVisualMarker(EBasicMarkerType Type, FVe
 
 }
 
-bool UBasicMarkerSpawner::AddVisualToActor(AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
 {
 	//Make sure actual Code is run on Gamethread
 	if (IsInGameThread())
 	{
-		return AddVisualToActorInternal(Actor, Type, Location, Rotation, Color);
+		return AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color);
 	}
 	else
 	{
@@ -76,7 +78,7 @@ bool UBasicMarkerSpawner::AddVisualToActor(AActor& Actor, EBasicMarkerType Type,
 		//Run on Gamethread
 		FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&]()
 		{
-			bSuccess = AddVisualToActorInternal(Actor, Type, Location, Rotation, Color);
+			bSuccess = AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color);
 		}, TStatId(), nullptr, ENamedThreads::GameThread);
 
 		//wait code above to complete
@@ -87,26 +89,26 @@ bool UBasicMarkerSpawner::AddVisualToActor(AActor& Actor, EBasicMarkerType Type,
 }
 
 
-bool UBasicMarkerSpawner::AddVisualToActorInternal(AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddVisualToActorInternal(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
 {
 
 	if (Type == EBasicMarkerType::Point)
 	{
-		return AddPointVisualToActor(Actor, Location, Rotation, Color);
+		return AddPointVisualToActor(World, Actor, Location, Rotation, Color);
 	}
 
 	UStaticMeshComponent* MeshComponent = NewObject<UStaticMeshComponent>(&Actor);
 
 	// Asign Mesh to Component
-	UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, **MapTypeToMeshPath.Find(Type)));
+	UStaticMesh* Mesh = Cast<UStaticMesh>(StaticLoadObject(UStaticMesh::StaticClass(), nullptr, *GetMeshPathOfType(Type)));
 	if (!Mesh)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[%s] Basic Mesh could not be loaded from Path: %s"), *FString(__FUNCTION__), **MapTypeToMeshPath.Find(Type));
+		UE_LOG(LogTemp, Error, TEXT("[%s] Basic Mesh could not be loaded from Path: %s"), *FString(__FUNCTION__), *GetMeshPathOfType(Type));
 		return false;
 	}
 	MeshComponent->SetStaticMesh(Mesh);
-
-	UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(Material, this);
+	auto Material = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, TEXT("Material'/UVisPackage/Meshes/BasicMarkerMeshes/BasicShapeMaterial.BasicShapeMaterial'")));
+	UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(Material, &Actor);
 	DynMaterial->SetVectorParameterValue("Color", Color);
 	MeshComponent->SetMaterial(0, DynMaterial);
 	MeshComponent->SetupAttachment(Actor.GetRootComponent());
@@ -116,7 +118,7 @@ bool UBasicMarkerSpawner::AddVisualToActorInternal(AActor& Actor, EBasicMarkerTy
 }
 
 
-bool UBasicMarkerSpawner::AddPointVisualToActor(AActor& Actor, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color)
 {
 	UGPUPointCloudRendererComponent* PointCloudRendererComponent = NewObject<UGPUPointCloudRendererComponent>(&Actor);
 
