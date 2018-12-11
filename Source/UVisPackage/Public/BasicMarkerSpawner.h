@@ -26,13 +26,13 @@ struct UVISPACKAGE_API FBasicMarkerSpawner
 
 public:
 	static AVisualMarker* SpawnVisualMarker(UWorld* World, EBasicMarkerType Type, FVector Location, FRotator Rotation,
-	                                 FColor Color = FColor::White);
+	                                 FColor Color = FColor::White, double Scale = 1.0);
 
-	static bool AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
+	static bool AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color, double Scale = 1.0);
 
 private:
-	static bool AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color);
-	static bool AddVisualToActorInternal(UWorld* World, AActor & Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color);
+	static bool AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color, double Scale);
+	static bool AddVisualToActorInternal(UWorld* World, AActor & Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color, double Scale);
 	static FString GetMeshPathOfType(EBasicMarkerType Type);
 };
 

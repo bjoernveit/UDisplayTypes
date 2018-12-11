@@ -26,11 +26,12 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayBasicMarkerServer::Callback(
 	const FVector Location = DisplayMarkerRequest->GetPose().GetPosition().GetVector();
 	const FRotator Rotation = DisplayMarkerRequest->GetPose().GetOrientation().GetQuat().Rotator();
 	const FColor Color = DisplayMarkerRequest->GetColor().GetColor();
+	double Scale = DisplayMarkerRequest->GetScale();
 
 	if (VisualMarker == nullptr)
 	{
 		// Marker does not exist => create Marker
-		AVisualMarker* NewMarker = FBasicMarkerSpawner::SpawnVisualMarker(World, MarkerType, Location, Rotation, Color);
+		AVisualMarker* NewMarker = FBasicMarkerSpawner::SpawnVisualMarker(World, MarkerType, Location, Rotation, Color, Scale);
 
 
 		//Controller->IdToMarkerMap.Add(Id, NewMarker);
@@ -38,7 +39,7 @@ TSharedPtr<FROSBridgeSrv::SrvResponse> FROSDisplayBasicMarkerServer::Callback(
 	}
 	else
 	{
-		FBasicMarkerSpawner::AddVisualToActor(World, **VisualMarker, MarkerType, Location, Rotation, Color);
+		FBasicMarkerSpawner::AddVisualToActor(World, **VisualMarker, MarkerType, Location, Rotation, Color, Scale);
 	}
 
 	return MakeShareable<FROSBridgeSrv::SrvResponse>

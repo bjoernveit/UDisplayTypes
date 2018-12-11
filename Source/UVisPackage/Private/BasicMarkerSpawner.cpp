@@ -26,7 +26,7 @@ FString FBasicMarkerSpawner::GetMeshPathOfType(EBasicMarkerType Type)
 }
 
 AVisualMarker* FBasicMarkerSpawner::SpawnVisualMarker(UWorld* World, EBasicMarkerType Type, FVector Location, FRotator Rotation,
-	FColor Color)
+	FColor Color, double Scale)
 {
 	
 	AVisualMarker* BaseActor;
@@ -57,7 +57,7 @@ AVisualMarker* FBasicMarkerSpawner::SpawnVisualMarker(UWorld* World, EBasicMarke
 		FTaskGraphInterface::Get().WaitUntilTaskCompletes(Task);
 	}
 
-	if (AddVisualToActor(World, *BaseActor, Type, Location, Rotation, Color))
+	if (AddVisualToActor(World, *BaseActor, Type, Location, Rotation, Color, Scale))
 		return BaseActor;
 
 	BaseActor->Destroy();
@@ -65,12 +65,12 @@ AVisualMarker* FBasicMarkerSpawner::SpawnVisualMarker(UWorld* World, EBasicMarke
 
 }
 
-bool FBasicMarkerSpawner::AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddVisualToActor(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color, double Scale)
 {
 	//Make sure actual Code is run on Gamethread
 	if (IsInGameThread())
 	{
-		return AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color);
+		return AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color, Scale);
 	}
 	else
 	{
@@ -78,7 +78,7 @@ bool FBasicMarkerSpawner::AddVisualToActor(UWorld* World, AActor& Actor, EBasicM
 		//Run on Gamethread
 		FGraphEventRef Task = FFunctionGraphTask::CreateAndDispatchWhenReady([&]()
 		{
-			bSuccess = AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color);
+			bSuccess = AddVisualToActorInternal(World, Actor, Type, Location, Rotation, Color, Scale);
 		}, TStatId(), nullptr, ENamedThreads::GameThread);
 
 		//wait code above to complete
@@ -89,12 +89,12 @@ bool FBasicMarkerSpawner::AddVisualToActor(UWorld* World, AActor& Actor, EBasicM
 }
 
 
-bool FBasicMarkerSpawner::AddVisualToActorInternal(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddVisualToActorInternal(UWorld* World, AActor& Actor, EBasicMarkerType Type, FVector Location, FRotator Rotation, FColor Color, double Scale)
 {
 
 	if (Type == EBasicMarkerType::Point)
 	{
-		return AddPointVisualToActor(World, Actor, Location, Rotation, Color);
+		return AddPointVisualToActor(World, Actor, Location, Rotation, Color, Scale);
 	}
 
 	UStaticMeshComponent* MeshComponent = NewObject<UStaticMeshComponent>(&Actor);
@@ -110,6 +110,7 @@ bool FBasicMarkerSpawner::AddVisualToActorInternal(UWorld* World, AActor& Actor,
 	auto Material = Cast<UMaterialInterface>(StaticLoadObject(UMaterialInterface::StaticClass(), nullptr, TEXT("Material'/UVisPackage/Meshes/BasicMarkerMeshes/BasicShapeMaterial.BasicShapeMaterial'")));
 	UMaterialInstanceDynamic* DynMaterial = UMaterialInstanceDynamic::Create(Material, &Actor);
 	DynMaterial->SetVectorParameterValue("Color", Color);
+	MeshComponent->SetWorldScale3D(FVector(Scale, Scale, Scale));
 	MeshComponent->SetMaterial(0, DynMaterial);
 	MeshComponent->SetupAttachment(Actor.GetRootComponent());
 	MeshComponent->SetWorldLocationAndRotation(Location, Rotation);
@@ -118,7 +119,7 @@ bool FBasicMarkerSpawner::AddVisualToActorInternal(UWorld* World, AActor& Actor,
 }
 
 
-bool FBasicMarkerSpawner::AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color)
+bool FBasicMarkerSpawner::AddPointVisualToActor(UWorld* World, AActor& Actor, FVector Location, FRotator Rotation, FColor Color, double Scale)
 {
 	UGPUPointCloudRendererComponent* PointCloudRendererComponent = NewObject<UGPUPointCloudRendererComponent>(&Actor);
 
@@ -129,7 +130,7 @@ bool FBasicMarkerSpawner::AddPointVisualToActor(UWorld* World, AActor& Actor, FV
 	Colors.Add(Color);
 
 	// Pass data to PCR
-	PointCloudRendererComponent->SetDynamicProperties(1, 1, 10);
+	PointCloudRendererComponent->SetDynamicProperties(1, 1, 10*Scale);
 
 	PointCloudRendererComponent->SetInputAndConvert1(Points, Colors);
 
