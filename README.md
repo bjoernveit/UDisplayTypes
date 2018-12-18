@@ -11,6 +11,8 @@ The ROS-Services provided are:
 
 For the this Plugin to work completely you need to install two more plugins, [UROSBridge](https://github.com/robcog-iai/UROSBridge) and [UE4_GPUPointCloudRenderer](https://github.com/hausfrau87/UE4_GPUPointCloudRenderer). To install plugins simply clone them into the plugin folder of your unreal project, make sure to activate the plugins in the editor if needed.
 
+I have an example project setup, you can find it [here](https://github.com/bjoernveit/GSOCExampleProject).
+
 For the publishing to ROS to work you need to set some stuff up on the Ros side as well.
 You need to install [rosbridge](http://wiki.ros.org/rosbridge_suite) and the needed srv files, which you can get [here](https://github.com/robcog-iai/unreal_ros_pkgs).
 
